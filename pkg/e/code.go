@@ -9,4 +9,6 @@ const (
 	ErrorOpenFile          = 30003
 	ErrorCreateDir         = 30004
 	ErrorSaveFile          = 30005
+	ErrorExistUser         = 30006
+	ErrorFailEncryption    = 30007
 )

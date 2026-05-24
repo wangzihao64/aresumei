@@ -9,6 +9,8 @@ var MsgFlags = map[int]string{
 	ErrorOpenFile:          "打开文件失败",
 	ErrorCreateDir:         "创建目录失败",
 	ErrorSaveFile:          "保存文件失败",
+	ErrorExistUser:         "用户已经存在",
+	ErrorFailEncryption:    "密码加密失败",
 }
 
 // GetMsg获取状态码对应信息
