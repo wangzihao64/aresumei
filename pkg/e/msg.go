@@ -11,6 +11,8 @@ var MsgFlags = map[int]string{
 	ErrorSaveFile:          "保存文件失败",
 	ErrorExistUser:         "用户已经存在",
 	ErrorFailEncryption:    "密码加密失败",
+	ErrorNotExistUser:      "用户不存在",
+	ErrorPassword:          "密码错误",
 }
 
 // GetMsg获取状态码对应信息

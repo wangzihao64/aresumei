@@ -11,4 +11,6 @@ const (
 	ErrorSaveFile          = 30005
 	ErrorExistUser         = 30006
 	ErrorFailEncryption    = 30007
+	ErrorNotExistUser      = 30008
+	ErrorPassword          = 30009
 )

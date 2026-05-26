@@ -17,6 +17,15 @@ func UserRegister(c *gin.Context) {
 		c.JSON(http.StatusOK, resp)
 	}
 }
+func UserLogin(c *gin.Context) {
+	var userLogin service.UserService
+	if err := c.ShouldBind(&userLogin); err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	} else {
+		resp := userLogin.Login(c.Request.Context())
+		c.JSON(http.StatusOK, resp)
+	}
+}
 func UserUpLoadResume(c *gin.Context) {
 	resp := util.UploadFile(c)
 	c.JSON(http.StatusOK, resp)

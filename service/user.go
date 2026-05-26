@@ -15,6 +15,49 @@ type UserService struct {
 	Key      string `json:"key" form:"key"`
 }
 
+func (service *UserService) Login(ctx context.Context) serizlizer.Response {
+	code := e.Success
+	userDao := dao.NewUserDao(ctx)
+	_, exist, err := userDao.ExistOrNotByUserName(service.Username)
+	if err != nil {
+		code = e.Error
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	if !exist {
+		code = e.ErrorNotExistUser
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  e.GetMsg(code),
+		}
+	}
+	user, err := userDao.FromUserNameByPassword(service.Username)
+	if err != nil {
+		code = e.Error
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	if !user.CheckPassword(service.Password) {
+		code = e.ErrorPassword
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  e.GetMsg(code),
+		}
+	}
+	return serizlizer.Response{
+		Status: code,
+		Msg:    e.GetMsg(code),
+		Data:   "登陆成功",
+	}
+}
 func (service *UserService) Register(ctx context.Context) serizlizer.Response {
 	var user model.User
 	code := e.Success
