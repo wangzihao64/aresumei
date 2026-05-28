@@ -13,4 +13,5 @@ const (
 	ErrorFailEncryption    = 30007
 	ErrorNotExistUser      = 30008
 	ErrorPassword          = 30009
+	ErrorGenerateToken     = 300010
 )

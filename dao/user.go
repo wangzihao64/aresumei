@@ -25,9 +25,9 @@ func (u *UserDao) ExistOrNotByUserName(username string) (user *model.User, exist
 	}
 	return user, true, nil
 }
-func (u *UserDao) FromUserNameByPassword(username string) (user *model.User, err error) {
-	err = u.Model(&model.User{}).Where("username=?", username).First(&user).Error
-	return user, err
+func (u *UserDao) GetUserById(id uint) (user *model.User, err error) {
+	err = u.Model(&model.User{}).Where("id = ?", id).First(&user).Error
+	return
 }
 func (u *UserDao) CreateUser(user *model.User) error {
 	return u.Model(&model.User{}).Create(user).Error

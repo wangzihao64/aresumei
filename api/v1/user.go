@@ -27,6 +27,19 @@ func UserLogin(c *gin.Context) {
 	}
 }
 func UserUpLoadResume(c *gin.Context) {
-	resp := util.UploadFile(c)
-	c.JSON(http.StatusOK, resp)
+	var uploadResume service.UserService
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	}
+	claims, err := util.ParseToken(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	}
+	if err := c.ShouldBind(&uploadResume); err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	} else {
+		resp := uploadResume.UpLoad(c.Request.Context(), file, claims.ID)
+		c.JSON(http.StatusOK, resp)
+	}
 }

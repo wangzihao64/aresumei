@@ -4,9 +4,13 @@ import (
 	"aresumei/dao"
 	"aresumei/model"
 	"aresumei/pkg/e"
+	"aresumei/pkg/util"
 	"aresumei/serizlizer"
 	"context"
+	"mime/multipart"
 )
+
+const resumesPath = "uploads/resumes"
 
 type UserService struct {
 	Nickname string `json:"nick_name" form:"nick_name"`
@@ -18,7 +22,7 @@ type UserService struct {
 func (service *UserService) Login(ctx context.Context) serizlizer.Response {
 	code := e.Success
 	userDao := dao.NewUserDao(ctx)
-	_, exist, err := userDao.ExistOrNotByUserName(service.Username)
+	user, exist, err := userDao.ExistOrNotByUserName(service.Username)
 	if err != nil {
 		code = e.Error
 		return serizlizer.Response{
@@ -35,15 +39,6 @@ func (service *UserService) Login(ctx context.Context) serizlizer.Response {
 			Error:  e.GetMsg(code),
 		}
 	}
-	user, err := userDao.FromUserNameByPassword(service.Username)
-	if err != nil {
-		code = e.Error
-		return serizlizer.Response{
-			Status: code,
-			Msg:    e.GetMsg(code),
-			Error:  err.Error(),
-		}
-	}
 	if !user.CheckPassword(service.Password) {
 		code = e.ErrorPassword
 		return serizlizer.Response{
@@ -52,10 +47,20 @@ func (service *UserService) Login(ctx context.Context) serizlizer.Response {
 			Error:  e.GetMsg(code),
 		}
 	}
+	token, err := util.GenerateToken(user.ID, user.Username, 0)
+	if err != nil {
+		code = e.ErrorGenerateToken
+		return serizlizer.Response{
+			Status: code,
+		}
+	}
 	return serizlizer.Response{
 		Status: code,
 		Msg:    e.GetMsg(code),
-		Data:   "登陆成功",
+		Data: serizlizer.TokenData{
+			Token: token,
+			User:  serizlizer.BuildUser(user),
+		},
 	}
 }
 func (service *UserService) Register(ctx context.Context) serizlizer.Response {
@@ -103,6 +108,41 @@ func (service *UserService) Register(ctx context.Context) serizlizer.Response {
 	}
 	if err := userDao.CreateUser(&user); err != nil {
 		code = e.Error
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	return serizlizer.Response{
+		Status: code,
+		Msg:    e.GetMsg(code),
+	}
+}
+func (service *UserService) UpLoad(ctx context.Context, file *multipart.FileHeader, id uint) serizlizer.Response {
+	code := e.Success
+	userDao := dao.NewUserDao(ctx)
+	user, err := userDao.GetUserById(id)
+	if err != nil {
+		code = e.ErrorNotExistUser
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	//todo 校验文件后缀(目前只判断是否是pdf文件)
+	if err := util.IsPdf(file); err != nil {
+		code = e.ErrorInvalidFileFormat
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	//创建保存目录
+	if err := util.SaveFiles(resumesPath, file, user.Username); err != nil {
+		code = e.ErrorSaveFile
 		return serizlizer.Response{
 			Status: code,
 			Msg:    e.GetMsg(code),
