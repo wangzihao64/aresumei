@@ -62,3 +62,18 @@ func SaveFiles(path string, file *multipart.FileHeader, name string) error {
 	}
 	return nil
 }
+
+// 保存文本，写入到本地磁盘
+func SaveText(path string, text, name string) error {
+	saveDir := path + "/" + name
+	if err := os.MkdirAll(saveDir, 0755); err != nil {
+		return err
+	}
+	//生成安全文件名
+	filename := name + uuid.New().String() + ".txt"
+	savePath := filepath.Join(saveDir, filename)
+	if err := os.WriteFile(savePath, []byte(text), 0644); err != nil {
+		return err
+	}
+	return nil
+}

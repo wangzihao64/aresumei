@@ -11,12 +11,16 @@ import (
 )
 
 const resumesPath = "uploads/resumes"
+const companyPath = "uploads/company"
 
 type UserService struct {
 	Nickname string `json:"nick_name" form:"nick_name"`
 	Username string `json:"user_name" form:"user_name"`
 	Password string `json:"password" form:"password"`
 	Key      string `json:"key" form:"key"`
+}
+type TextService struct {
+	Text string `json:"text" form:"text" binding:"required"`
 }
 
 func (service *UserService) Login(ctx context.Context) serizlizer.Response {
@@ -119,7 +123,7 @@ func (service *UserService) Register(ctx context.Context) serizlizer.Response {
 		Msg:    e.GetMsg(code),
 	}
 }
-func (service *UserService) UpLoad(ctx context.Context, file *multipart.FileHeader, id uint) serizlizer.Response {
+func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.FileHeader, id uint) serizlizer.Response {
 	code := e.Success
 	userDao := dao.NewUserDao(ctx)
 	user, err := userDao.GetUserById(id)
@@ -142,6 +146,27 @@ func (service *UserService) UpLoad(ctx context.Context, file *multipart.FileHead
 	}
 	//创建保存目录
 	if err := util.SaveFiles(resumesPath, file, user.Username); err != nil {
+		code = e.ErrorSaveFile
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	return serizlizer.Response{
+		Status: code,
+		Msg:    e.GetMsg(code),
+	}
+}
+func (service *TextService) UploadCompany(ctx context.Context, id uint) serizlizer.Response {
+	code := e.Success
+	userDao := dao.NewUserDao(ctx)
+	user, err := userDao.GetUserById(id)
+	if err != nil {
+		code = e.ErrorNotExistUser
+	}
+	//保存text到文件里
+	if err := util.SaveText(companyPath, service.Text, user.Username); err != nil {
 		code = e.ErrorSaveFile
 		return serizlizer.Response{
 			Status: code,

@@ -39,7 +39,21 @@ func UserUpLoadResume(c *gin.Context) {
 	if err := c.ShouldBind(&uploadResume); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	} else {
-		resp := uploadResume.UpLoad(c.Request.Context(), file, claims.ID)
+		resp := uploadResume.UpLoadResume(c.Request.Context(), file, claims.ID)
 		c.JSON(http.StatusOK, resp)
 	}
+}
+func UserUpLoadCompany(c *gin.Context) {
+	var uploadCompany service.TextService
+	claims, err := util.ParseToken(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	}
+	if err := c.ShouldBind(&uploadCompany); err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	} else {
+		resp := uploadCompany.UploadCompany(c.Request.Context(), claims.ID)
+		c.JSON(http.StatusOK, resp)
+	}
+
 }
