@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"mime/multipart"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/ledongthuc/pdf"
 )
 
 const resumesPath = "uploads/resumes"
@@ -76,4 +78,23 @@ func SaveText(path string, text, name string) error {
 		return err
 	}
 	return nil
+}
+
+// 把pdf文件解析成string
+func ReadPdfToString(path string) (string, error) {
+	//1.打开并读取pdf文件
+	f, r, err := pdf.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	//2.获取所有纯文本内容
+	var buf bytes.Buffer
+	b, err := r.GetPlainText()
+	if err != nil {
+		return "", err
+	}
+	buf.ReadFrom(b)
+	//3.返回字符串
+	return buf.String(), nil
 }
