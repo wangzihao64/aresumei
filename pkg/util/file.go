@@ -38,11 +38,11 @@ func IsPdf(file *multipart.FileHeader) error {
 }
 
 // 保存目录，写入到本地磁盘
-func SaveFiles(path string, file *multipart.FileHeader, name string) error {
+func SaveFiles(path string, file *multipart.FileHeader, name string) (string, error) {
 	//创建保存目录
 	saveDir := path + "/" + name
 	if err := os.MkdirAll(saveDir, 0755); err != nil {
-		return err
+		return "", err
 	}
 	//生成安全文件名
 	ext := filepath.Ext(file.Filename)
@@ -51,18 +51,18 @@ func SaveFiles(path string, file *multipart.FileHeader, name string) error {
 	//写入本地磁盘
 	src, err := file.Open()
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer src.Close()
 	dst, err := os.Create(savePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer dst.Close()
 	if _, err = io.Copy(dst, src); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return saveDir + "/" + filename, nil
 }
 
 // 保存文本，写入到本地磁盘

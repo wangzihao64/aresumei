@@ -2,11 +2,13 @@ package service
 
 import (
 	"aresumei/dao"
+	"aresumei/internal/agent/resume"
 	"aresumei/model"
 	"aresumei/pkg/e"
 	"aresumei/pkg/util"
 	"aresumei/serizlizer"
 	"context"
+	"fmt"
 	"mime/multipart"
 )
 
@@ -145,8 +147,27 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 		}
 	}
 	//创建保存目录
-	if err := util.SaveFiles(resumesPath, file, user.Username); err != nil {
+	filename, err := util.SaveFiles(resumesPath, file, user.Username)
+	if err != nil {
 		code = e.ErrorSaveFile
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	pdfString, err := util.ReadPdfToString(filename)
+	fmt.Println(pdfString)
+	if err != nil {
+		code = e.ErrorSaveFile
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	if err := resume.Execute(ctx, pdfString); err != nil {
+		code = e.Error
 		return serizlizer.Response{
 			Status: code,
 			Msg:    e.GetMsg(code),
