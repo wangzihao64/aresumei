@@ -72,6 +72,22 @@ func (service *UserService) Login(ctx context.Context) serizlizer.Response {
 func (service *UserService) Register(ctx context.Context) serizlizer.Response {
 	var user model.User
 	code := e.Success
+	if service.Username == "" {
+		code = e.ErrorUsernameIsEmpty
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  e.GetMsg(code),
+		}
+	}
+	if service.Password == "" {
+		code = e.ErrorPasswordIsEmpty
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  e.GetMsg(code),
+		}
+	}
 	//todo 目前密钥没有用到
 	if service.Key == "" || len(service.Key) != 16 {
 		code = e.Error

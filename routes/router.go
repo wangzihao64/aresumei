@@ -17,6 +17,7 @@ func NewRouter() *gin.Engine {
 		v1.POST("user/login", api.UserLogin)
 		v1.POST("upload/resume", api.UserUpLoadResume)
 		v1.POST("upload/company", api.UserUpLoadCompany)
+		v1.POST("user/vaild-email", api.UserVaildEmail)
 	}
 	return r
 }

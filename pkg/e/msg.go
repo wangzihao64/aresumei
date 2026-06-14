@@ -13,6 +13,8 @@ var MsgFlags = map[int]string{
 	ErrorFailEncryption:    "密码加密失败",
 	ErrorNotExistUser:      "用户不存在",
 	ErrorPassword:          "密码错误",
+	ErrorUsernameIsEmpty:   "请输入用户名",
+	ErrorPasswordIsEmpty:   "请输入密码",
 }
 
 // GetMsg获取状态码对应信息

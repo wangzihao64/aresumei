@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -11,9 +13,12 @@ const (
 
 type User struct {
 	*gorm.Model
-	Username       string `gorm:"unique"`
-	PasswordDigest string
-	Nickname       string
+	Username                  string    `gorm:"unique"`
+	Email                     string    `gorm:"unique"`
+	EmailVerified             bool      `gorm:"default:false"`
+	VerificationCodeExpiresAt time.Time `gorm:"-"`
+	PasswordDigest            string
+	Nickname                  string
 }
 
 func (user *User) CheckPassword(password string) bool {

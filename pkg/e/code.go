@@ -14,4 +14,6 @@ const (
 	ErrorNotExistUser      = 30008
 	ErrorPassword          = 30009
 	ErrorGenerateToken     = 300010
+	ErrorUsernameIsEmpty   = 300011
+	ErrorPasswordIsEmpty   = 300012
 )
