@@ -1,6 +1,7 @@
 package service
 
 import (
+	"aresumei/cache"
 	"aresumei/dao"
 	"aresumei/internal/agent/resume"
 	"aresumei/model"
@@ -16,10 +17,12 @@ const resumesPath = "uploads/resumes"
 const companyPath = "uploads/company"
 
 type UserService struct {
-	Nickname string `json:"nick_name" form:"nick_name"`
-	Username string `json:"user_name" form:"user_name"`
-	Password string `json:"password" form:"password"`
-	Key      string `json:"key" form:"key"`
+	Nickname  string `json:"nick_name" form:"nick_name"`
+	Username  string `json:"user_name" form:"user_name"`
+	Password  string `json:"password" form:"password"`
+	Key       string `json:"key" form:"key"`
+	Email     string `json:"email" form:"email"`
+	EmailCode string `json:"code" form:"code"`
 }
 type TextService struct {
 	Text string `json:"text" form:"text" binding:"required"`
@@ -88,6 +91,32 @@ func (service *UserService) Register(ctx context.Context) serizlizer.Response {
 			Error:  e.GetMsg(code),
 		}
 	}
+	if service.Email == "" {
+		code = e.ErrorEmailIsEmpty
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  e.GetMsg(code),
+		}
+	}
+	rdb := cache.NewRDB(ctx)
+	rdbCode, err := rdb.GetVerificationCode(service.Email)
+	if err != nil {
+		code = e.ErrorRedisGetkey
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	if rdbCode != service.EmailCode {
+		code = e.ErrorRedisGetkey
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
 	//todo 目前密钥没有用到
 	if service.Key == "" || len(service.Key) != 16 {
 		code = e.Error
@@ -116,8 +145,10 @@ func (service *UserService) Register(ctx context.Context) serizlizer.Response {
 		}
 	}
 	user = model.User{
-		Nickname: service.Nickname,
-		Username: service.Username,
+		Nickname:      service.Nickname,
+		Username:      service.Username,
+		Email:         service.Email,
+		EmailVerified: true,
 	}
 	//密码加密
 	if err := user.SetPassword(service.Password); err != nil {

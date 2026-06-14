@@ -16,4 +16,7 @@ const (
 	ErrorGenerateToken     = 300010
 	ErrorUsernameIsEmpty   = 300011
 	ErrorPasswordIsEmpty   = 300012
+	ErrorEmailIsEmpty      = 300013
+	ErrorEmailCodeIsEmpty  = 300014
+	ErrorRedisGetkey       = 300015
 )

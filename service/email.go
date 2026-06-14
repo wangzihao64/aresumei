@@ -40,8 +40,6 @@ func (sendEmail *SendEmailService) Send(ctx context.Context) serizlizer.Response
 	_ = rdb.StoreVerificationCode(sendEmail.Email, VerificationCode)
 	//3.发送验证码
 	_ = SenVerificationEmail(sendEmail.Email, VerificationCode)
-	value, _ := rdb.GetVerificationCode(sendEmail.Email)
-	fmt.Println(value)
 	return serizlizer.Response{
 		Status: code,
 		Msg:    e.GetMsg(code),

@@ -15,6 +15,9 @@ var MsgFlags = map[int]string{
 	ErrorPassword:          "密码错误",
 	ErrorUsernameIsEmpty:   "请输入用户名",
 	ErrorPasswordIsEmpty:   "请输入密码",
+	ErrorEmailIsEmpty:      "请输入邮箱",
+	ErrorEmailCodeIsEmpty:  "请输入验证码",
+	ErrorRedisGetkey:       "验证码过期或无效",
 }
 
 // GetMsg获取状态码对应信息
