@@ -46,7 +46,7 @@ func SaveFiles(path string, file *multipart.FileHeader, name string) (string, er
 	}
 	//生成安全文件名
 	ext := filepath.Ext(file.Filename)
-	filename := strings.TrimSuffix(file.Filename, ext) + uuid.New().String() + ext
+	filename := uuid.New().String() + ext
 	savePath := filepath.Join(saveDir, filename)
 	//写入本地磁盘
 	src, err := file.Open()
@@ -72,7 +72,7 @@ func SaveText(path string, text, name string) error {
 		return err
 	}
 	//生成安全文件名
-	filename := name + uuid.New().String() + ".txt"
+	filename := uuid.New().String() + ".txt"
 	savePath := filepath.Join(saveDir, filename)
 	if err := os.WriteFile(savePath, []byte(text), 0644); err != nil {
 		return err
