@@ -3,13 +3,11 @@ package service
 import (
 	"aresumei/cache"
 	"aresumei/dao"
-	"aresumei/internal/agent/resume"
 	"aresumei/model"
 	"aresumei/pkg/e"
 	"aresumei/pkg/util"
 	"aresumei/serizlizer"
 	"context"
-	"fmt"
 	"mime/multipart"
 )
 
@@ -194,7 +192,7 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 		}
 	}
 	//创建保存目录
-	filename, err := util.SaveFiles(resumesPath, file, user.Username)
+	filePath, err := util.SaveFiles(resumesPath, file, user.Username)
 	if err != nil {
 		code = e.ErrorSaveFile
 		return serizlizer.Response{
@@ -203,17 +201,13 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 			Error:  err.Error(),
 		}
 	}
-	pdfString, err := util.ReadPdfToString(filename)
-	fmt.Println(pdfString)
-	if err != nil {
-		code = e.ErrorSaveFile
-		return serizlizer.Response{
-			Status: code,
-			Msg:    e.GetMsg(code),
-			Error:  err.Error(),
-		}
+	resumeDao := dao.NewResumeDao(ctx)
+	resume := model.Resume{
+		UserID:       user.ID,
+		OriginalName: file.Filename,
+		FilePath:     filePath,
 	}
-	if err := resume.Execute(ctx, pdfString); err != nil {
+	if err := resumeDao.CreateResume(&resume); err != nil {
 		code = e.Error
 		return serizlizer.Response{
 			Status: code,
@@ -223,7 +217,10 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 	}
 	return serizlizer.Response{
 		Status: code,
-		Msg:    e.GetMsg(code),
+		Data: map[string]uint{
+			"resume_id": resume.ID,
+		},
+		Msg: e.GetMsg(code),
 	}
 }
 func (service *TextService) UploadCompany(ctx context.Context, id uint) serizlizer.Response {

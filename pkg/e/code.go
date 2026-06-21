@@ -19,4 +19,5 @@ const (
 	ErrorEmailIsEmpty      = 300013
 	ErrorEmailCodeIsEmpty  = 300014
 	ErrorRedisGetkey       = 300015
+	ErrorNotExistResume    = 300016
 )

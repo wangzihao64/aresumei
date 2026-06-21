@@ -18,6 +18,7 @@ var MsgFlags = map[int]string{
 	ErrorEmailIsEmpty:      "请输入邮箱",
 	ErrorEmailCodeIsEmpty:  "请输入验证码",
 	ErrorRedisGetkey:       "验证码过期或无效",
+	ErrorNotExistResume:    "没有简历无法生成面试报告，请上传简历",
 }
 
 // GetMsg获取状态码对应信息
