@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/openai/openai-go/v3"
 )
@@ -161,14 +163,17 @@ func generateInterviewReport(ctx context.Context, ai *llm.OpenAiClient, parsedRe
 	if err != nil {
 		return "", err
 	}
-	systemPrompt := "You are a senior technical interviewer.\nGenerate an interview report for the user based only on the provided structured resume JSON.\nFocus on work_experiences.highlights, work_experiences.technologies, skills, project_experiences.description, project_experiences.highlights, and project_experiences.technologies.\nDo not invent facts or evaluate information that is not present in the JSON."
+	systemPrompt := "You are a senior technical interviewer.\nGenerate a polished plain-text interview report for the user based only on the provided structured resume JSON.\nFocus on work_experiences.highlights, work_experiences.technologies, skills, project_experiences.description, project_experiences.highlights, and project_experiences.technologies.\nDo not invent facts or evaluate information that is not present in the JSON.\nDo not use Markdown syntax, including # headings, *, -, code fences, tables, or block quotes."
 	userPrompt := fmt.Sprintf(`请基于以下结构化简历信息生成一份中文面试报告。
 
 报告要求：
-1. 输出 Markdown 文本，不要输出 JSON。
-2. 重点覆盖技术栈匹配度、工作经历亮点、项目经历亮点、可追问方向、候选人风险点、建议面试问题。
-3. 所有判断必须能从输入 JSON 中找到依据；信息不足时明确写“简历未体现”。
-4. 面试问题要结合候选人的技术、工作亮点和项目描述，不要生成泛泛的问题。
+1. 输出适合直接展示给用户的纯文本，不要输出 JSON，不要使用 Markdown。
+2. 不要使用 #、*、-、>、表格、代码块等格式符号。
+3. 用清晰的小标题和编号组织内容，小标题格式为“1. 技术栈匹配度”。
+4. 每个小标题下用自然中文短句分段说明，不要使用项目符号列表。
+5. 重点覆盖技术栈匹配度、工作经历亮点、项目经历亮点、可追问方向、候选人风险点、建议面试问题。
+6. 所有判断必须能从输入 JSON 中找到依据；信息不足时明确写“简历未体现”。
+7. 面试问题要结合候选人的技术、工作亮点和项目描述，不要生成泛泛的问题。
 
 结构化简历信息：
 %s`, string(payload))
@@ -186,7 +191,30 @@ func generateInterviewReport(ctx context.Context, ai *llm.OpenAiClient, parsedRe
 	if len(completion.Choices) == 0 {
 		return "", errors.New("empty interview report completion choices")
 	}
-	return completion.Choices[0].Message.Content, nil
+	return cleanInterviewReport(completion.Choices[0].Message.Content), nil
+}
+
+var (
+	markdownHeadingRE     = regexp.MustCompile(`(?m)^[ \t]{0,3}#{1,6}[ \t]*`)
+	markdownListMarkerRE  = regexp.MustCompile(`(?m)^[ \t]*[*+-][ \t]+`)
+	markdownQuoteRE       = regexp.MustCompile(`(?m)^[ \t]*>[ \t]?`)
+	markdownBoldItalicRE  = regexp.MustCompile(`[*_]{1,3}([^*_]+)[*_]{1,3}`)
+	markdownInlineCodeRE  = regexp.MustCompile("`([^`]+)`")
+	markdownFenceMarkerRE = regexp.MustCompile("(?m)^```[\\w-]*\\s*$")
+	blankLinesRE         = regexp.MustCompile(`\n{3,}`)
+)
+
+func cleanInterviewReport(report string) string {
+	report = strings.ReplaceAll(report, "\r\n", "\n")
+	report = markdownFenceMarkerRE.ReplaceAllString(report, "")
+	report = markdownHeadingRE.ReplaceAllString(report, "")
+	report = markdownListMarkerRE.ReplaceAllString(report, "")
+	report = markdownQuoteRE.ReplaceAllString(report, "")
+	report = markdownBoldItalicRE.ReplaceAllString(report, "$1")
+	report = markdownInlineCodeRE.ReplaceAllString(report, "$1")
+	report = strings.ReplaceAll(report, "|", " ")
+	report = blankLinesRE.ReplaceAllString(report, "\n\n")
+	return strings.TrimSpace(report)
 }
 
 func buildInterviewReportInput(parsedResume schema.Resume) interviewReportInput {

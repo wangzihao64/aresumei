@@ -61,3 +61,14 @@ func TestBuildInterviewReportInputUsesRequiredResumeFields(t *testing.T) {
 		t.Fatalf("buildInterviewReportInput() = %#v, want %#v", got, want)
 	}
 }
+
+func TestCleanInterviewReportRemovesMarkdownSyntax(t *testing.T) {
+	raw := "# 面试报告\n\n## 技术栈匹配度\n* **Go** 与 `MySQL` 经验明确\n- 简历未体现云服务经验\n> 可继续追问项目落地细节\n\n```text\n建议问题\n```\n"
+
+	got := cleanInterviewReport(raw)
+	want := "面试报告\n\n技术栈匹配度\nGo 与 MySQL 经验明确\n简历未体现云服务经验\n可继续追问项目落地细节\n\n建议问题"
+
+	if got != want {
+		t.Fatalf("cleanInterviewReport() = %q, want %q", got, want)
+	}
+}
