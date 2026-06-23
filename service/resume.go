@@ -34,10 +34,27 @@ func (r *ResumeService) Resume(ctx context.Context, id uint) serizlizer.Response
 		}
 	}
 	resumePath := resume_.FilePath
-	pdfstring, _ := util.ReadPdfToString(resumePath)
-	resume.Execute(ctx, pdfstring)
+	pdfstring, err := util.ReadPdfToString(resumePath)
+	if err != nil {
+		code = e.ErrorOpenFile
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	report, err := resume.Execute(ctx, pdfstring)
+	if err != nil {
+		code = e.Error
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
 	return serizlizer.Response{
 		Status: code,
-		Data:   e.GetMsg(code),
+		Data:   report,
+		Msg:    e.GetMsg(code),
 	}
 }
