@@ -6,7 +6,7 @@ import (
 )
 
 func Migration() {
-	err := _db.Set("gorm:table_options", "charset=utf8mb4").AutoMigrate(&model.User{}, &model.Resume{})
+	err := _db.Set("gorm:table_options", "charset=utf8mb4").AutoMigrate(&model.User{}, &model.Resume{}, &model.CompanyInfo{})
 	if err != nil {
 		fmt.Println(err)
 	}

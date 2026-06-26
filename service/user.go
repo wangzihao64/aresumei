@@ -3,6 +3,7 @@ package service
 import (
 	"aresumei/cache"
 	"aresumei/dao"
+	agentresume "aresumei/internal/agent/resume"
 	"aresumei/model"
 	"aresumei/pkg/e"
 	"aresumei/pkg/util"
@@ -23,6 +24,7 @@ type UserService struct {
 	EmailCode string `json:"code" form:"code"`
 }
 type TextService struct {
+	Name string `json:"name" form:"name"`
 	Text string `json:"text" form:"text" binding:"required"`
 }
 
@@ -206,6 +208,7 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 		UserID:       user.ID,
 		OriginalName: file.Filename,
 		FilePath:     filePath,
+		Status:       model.ResumeStatusProcessing,
 	}
 	if err := resumeDao.CreateResume(&resume); err != nil {
 		code = e.Error
@@ -215,24 +218,67 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 			Error:  err.Error(),
 		}
 	}
+	go generateResumeReport(resume.ID, resume.FilePath)
 	return serizlizer.Response{
 		Status: code,
-		Data: map[string]uint{
+		Data: map[string]interface{}{
 			"resume_id": resume.ID,
+			"status":    resume.Status,
 		},
 		Msg: e.GetMsg(code),
 	}
 }
+
+func generateResumeReport(resumeId uint, filePath string) {
+	ctx := context.Background()
+	resumeDao := dao.NewResumeDao(ctx)
+	if err := resumeDao.MarkReportProcessing(resumeId); err != nil {
+		return
+	}
+	pdfstring, err := util.ReadPdfToString(filePath)
+	if err != nil {
+		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
+		return
+	}
+	report, err := agentresume.Execute(ctx, pdfstring)
+	if err != nil {
+		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
+		return
+	}
+	_ = resumeDao.MarkReportCompleted(resumeId, report)
+}
+
 func (service *TextService) UploadCompany(ctx context.Context, id uint) serizlizer.Response {
 	code := e.Success
 	userDao := dao.NewUserDao(ctx)
 	user, err := userDao.GetUserById(id)
 	if err != nil {
 		code = e.ErrorNotExistUser
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
 	}
 	//保存text到文件里
-	if err := util.SaveText(companyPath, service.Text, user.Username); err != nil {
+	filePath, err := util.SaveText(companyPath, service.Text, user.Username)
+	if err != nil {
 		code = e.ErrorSaveFile
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	company := model.CompanyInfo{
+		UserID:   user.ID,
+		Name:     service.Name,
+		Content:  service.Text,
+		FilePath: filePath,
+	}
+	companyDao := dao.NewCompanyDao(ctx)
+	if err := companyDao.CreateCompanyInfo(&company); err != nil {
+		code = e.Error
 		return serizlizer.Response{
 			Status: code,
 			Msg:    e.GetMsg(code),
@@ -241,6 +287,11 @@ func (service *TextService) UploadCompany(ctx context.Context, id uint) serizliz
 	}
 	return serizlizer.Response{
 		Status: code,
-		Msg:    e.GetMsg(code),
+		Data: map[string]interface{}{
+			"company_id": company.ID,
+			"name":       company.Name,
+			"file_path":  company.FilePath,
+		},
+		Msg: e.GetMsg(code),
 	}
 }

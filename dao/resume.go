@@ -21,3 +21,31 @@ func (u *ResumeDao) GetResumeById(resumeId uint) (resume *model.Resume, err erro
 	err = u.Model(&model.Resume{}).Where("id = ?", resumeId).First(&resume).Error
 	return
 }
+
+func (u *ResumeDao) GetResumeByIdAndUserId(resumeId, userId uint) (resume *model.Resume, err error) {
+	err = u.Model(&model.Resume{}).Where("id = ? AND user_id = ?", resumeId, userId).First(&resume).Error
+	return
+}
+
+func (u *ResumeDao) MarkReportProcessing(resumeId uint) error {
+	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(map[string]interface{}{
+		"status":        model.ResumeStatusProcessing,
+		"report":        "",
+		"error_message": "",
+	}).Error
+}
+
+func (u *ResumeDao) MarkReportCompleted(resumeId uint, report string) error {
+	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(map[string]interface{}{
+		"status":        model.ResumeStatusCompleted,
+		"report":        report,
+		"error_message": "",
+	}).Error
+}
+
+func (u *ResumeDao) MarkReportFailed(resumeId uint, message string) error {
+	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(map[string]interface{}{
+		"status":        model.ResumeStatusFailed,
+		"error_message": message,
+	}).Error
+}
