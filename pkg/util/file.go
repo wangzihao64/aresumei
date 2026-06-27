@@ -98,3 +98,12 @@ func ReadPdfToString(path string) (string, error) {
 	//3.返回字符串
 	return buf.String(), nil
 }
+
+// 读取text
+func ReadText(path string) (string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}

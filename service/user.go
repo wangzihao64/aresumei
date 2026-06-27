@@ -3,6 +3,7 @@ package service
 import (
 	"aresumei/cache"
 	"aresumei/dao"
+	agentcompany "aresumei/internal/agent/company"
 	agentresume "aresumei/internal/agent/resume"
 	"aresumei/model"
 	"aresumei/pkg/e"
@@ -247,7 +248,26 @@ func generateResumeReport(resumeId uint, filePath string) {
 	}
 	_ = resumeDao.MarkReportCompleted(resumeId, report)
 }
+func generateCompanyReport(companyId uint, filePath string) {
+	ctx := context.Background()
+	companyDao := dao.NewCompanyDao(ctx)
+	if err := companyDao.MarkCompanyReportProcessing(companyId); err != nil {
+		return
+	}
+	text, err := util.ReadText(filePath)
+	if err != nil {
+		_ = companyDao.MarkCompanyReportFailed(companyId, err.Error())
+		return
+	}
+	report, err := agentcompany.Execute(ctx, text)
+	if err != nil {
+		_ = companyDao.MarkCompanyReportFailed(companyId, err.Error())
+		return
+	}
+	_ = companyDao.MarkCompanyReportCompleted(companyId, report)
+}
 
+// todo 需要后期解耦合
 func (service *TextService) UploadCompany(ctx context.Context, id uint) serizlizer.Response {
 	code := e.Success
 	userDao := dao.NewUserDao(ctx)
@@ -285,12 +305,12 @@ func (service *TextService) UploadCompany(ctx context.Context, id uint) serizliz
 			Error:  err.Error(),
 		}
 	}
+	go generateCompanyReport(company.ID, company.FilePath)
 	return serizlizer.Response{
 		Status: code,
 		Data: map[string]interface{}{
 			"company_id": company.ID,
-			"name":       company.Name,
-			"file_path":  company.FilePath,
+			"status":     company.Status,
 		},
 		Msg: e.GetMsg(code),
 	}
