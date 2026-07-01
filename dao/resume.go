@@ -27,18 +27,26 @@ func (u *ResumeDao) GetResumeByIdAndUserId(resumeId, userId uint) (resume *model
 	return
 }
 
+func (u *ResumeDao) UpdateResumeInfoById(resumeId uint, values map[string]interface{}) error {
+	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(values).Error
+}
+
+func (u *ResumeDao) UpdateResumeLLMFilePath(resumeId uint, filePath string) error {
+	return u.UpdateResumeInfoById(resumeId, map[string]interface{}{
+		"llm_file_path": filePath,
+	})
+}
+
 func (u *ResumeDao) MarkReportProcessing(resumeId uint) error {
 	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(map[string]interface{}{
 		"status":        model.ResumeStatusProcessing,
-		"report":        "",
 		"error_message": "",
 	}).Error
 }
 
-func (u *ResumeDao) MarkReportCompleted(resumeId uint, report string) error {
+func (u *ResumeDao) MarkReportCompleted(resumeId uint) error {
 	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(map[string]interface{}{
 		"status":        model.ResumeStatusCompleted,
-		"report":        report,
 		"error_message": "",
 	}).Error
 }

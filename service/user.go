@@ -219,7 +219,7 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 			Error:  err.Error(),
 		}
 	}
-	go generateResumeReport(resume.ID, resume.FilePath)
+	go generateResumeReport(resume.ID, resume.FilePath, user.Username)
 	return serizlizer.Response{
 		Status: code,
 		Data: map[string]interface{}{
@@ -230,7 +230,7 @@ func (service *UserService) UpLoadResume(ctx context.Context, file *multipart.Fi
 	}
 }
 
-func generateResumeReport(resumeId uint, filePath string) {
+func generateResumeReport(resumeId uint, filePath string, name string) {
 	ctx := context.Background()
 	resumeDao := dao.NewResumeDao(ctx)
 	if err := resumeDao.MarkReportProcessing(resumeId); err != nil {
@@ -246,9 +246,18 @@ func generateResumeReport(resumeId uint, filePath string) {
 		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
 		return
 	}
-	_ = resumeDao.MarkReportCompleted(resumeId, report)
+	llmFilePath, err := util.SaveText(companyPath, report, name)
+	if err != nil {
+		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
+		return
+	}
+	if err := resumeDao.UpdateResumeLLMFilePath(resumeId, llmFilePath); err != nil {
+		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
+		return
+	}
+	_ = resumeDao.MarkReportCompleted(resumeId)
 }
-func generateCompanyReport(companyId uint, filePath string) {
+func generateCompanyReport(companyId uint, filePath string, name string) {
 	ctx := context.Background()
 	companyDao := dao.NewCompanyDao(ctx)
 	if err := companyDao.MarkCompanyReportProcessing(companyId); err != nil {
@@ -261,6 +270,15 @@ func generateCompanyReport(companyId uint, filePath string) {
 	}
 	report, err := agentcompany.Execute(ctx, text)
 	if err != nil {
+		_ = companyDao.MarkCompanyReportFailed(companyId, err.Error())
+		return
+	}
+	llmFilePath, err := util.SaveText(companyPath, report, name)
+	if err != nil {
+		_ = companyDao.MarkCompanyReportFailed(companyId, err.Error())
+		return
+	}
+	if err := companyDao.UpdateCompanyLLMFilePath(companyId, llmFilePath); err != nil {
 		_ = companyDao.MarkCompanyReportFailed(companyId, err.Error())
 		return
 	}
@@ -305,7 +323,7 @@ func (service *TextService) UploadCompany(ctx context.Context, id uint) serizliz
 			Error:  err.Error(),
 		}
 	}
-	go generateCompanyReport(company.ID, company.FilePath)
+	go generateCompanyReport(company.ID, company.FilePath, user.Username)
 	return serizlizer.Response{
 		Status: code,
 		Data: map[string]interface{}{

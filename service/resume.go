@@ -3,12 +3,18 @@ package service
 import (
 	"aresumei/dao"
 	"aresumei/pkg/e"
+	"aresumei/pkg/util"
 	"aresumei/serizlizer"
 	"context"
+	"fmt"
 )
 
 type ResumeService struct {
 	ResumeId uint `json:"resume_id" form:"resume_id" binding:"required"`
+}
+type OptimizeResume struct {
+	ResumeId  uint `json:"resume_id" form:"resume_id" binding:"required"`
+	CompanyId uint `json:"company_id" form:"company_id" binding:"required"`
 }
 
 func (r *ResumeService) Resume(ctx context.Context, id uint) serizlizer.Response {
@@ -31,14 +37,21 @@ func (r *ResumeService) Resume(ctx context.Context, id uint) serizlizer.Response
 			Error:  err.Error(),
 		}
 	}
+	report, _ := util.ReadText(resume_.LLMFilePath)
+	fmt.Println("wzh===========")
+	fmt.Println(report)
 	return serizlizer.Response{
 		Status: code,
 		Data: map[string]interface{}{
 			"resume_id": resume_.ID,
 			"status":    resume_.Status,
-			"report":    resume_.Report,
+			"report":    report,
 			"error":     resume_.ErrorMessage,
 		},
 		Msg: e.GetMsg(code),
 	}
 }
+
+//func (o *OptimizeResume)Optimize(ctx context.Context, id uint) serizlizer.Response {
+//
+//}

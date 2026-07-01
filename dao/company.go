@@ -32,6 +32,16 @@ func (u *CompanyDao) GetCompanyReportByIdAndUserId(companyId, userId uint) (comp
 	return
 }
 
+func (u *CompanyDao) UpdateCompanyInfoById(companyId uint, values map[string]interface{}) error {
+	return u.Model(&model.CompanyInfo{}).Where("id = ?", companyId).Updates(values).Error
+}
+
+func (u *CompanyDao) UpdateCompanyLLMFilePath(companyId uint, filePath string) error {
+	return u.UpdateCompanyInfoById(companyId, map[string]interface{}{
+		"llm_file_path": filePath,
+	})
+}
+
 func (u *CompanyDao) MarkCompanyReportProcessing(companyId uint) error {
 	return u.Model(&model.CompanyInfo{}).Where("id = ?", companyId).Updates(map[string]interface{}{
 		"status":        model.CompanyStatusProcessing,
