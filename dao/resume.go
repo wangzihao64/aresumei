@@ -37,6 +37,12 @@ func (u *ResumeDao) UpdateResumeLLMFilePath(resumeId uint, filePath string) erro
 	})
 }
 
+func (u *ResumeDao) UpdateParsedResumeFilePath(resumeId uint, filePath string) error {
+	return u.UpdateResumeInfoById(resumeId, map[string]interface{}{
+		"parsed_resume_file_path": filePath,
+	})
+}
+
 func (u *ResumeDao) MarkReportProcessing(resumeId uint) error {
 	return u.Model(&model.Resume{}).Where("id = ?", resumeId).Updates(map[string]interface{}{
 		"status":        model.ResumeStatusProcessing,

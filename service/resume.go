@@ -6,7 +6,6 @@ import (
 	"aresumei/pkg/util"
 	"aresumei/serizlizer"
 	"context"
-	"fmt"
 )
 
 type ResumeService struct {
@@ -38,8 +37,6 @@ func (r *ResumeService) Resume(ctx context.Context, id uint) serizlizer.Response
 		}
 	}
 	report, _ := util.ReadText(resume_.LLMFilePath)
-	fmt.Println("wzh===========")
-	fmt.Println(report)
 	return serizlizer.Response{
 		Status: code,
 		Data: map[string]interface{}{

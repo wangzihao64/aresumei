@@ -5,11 +5,13 @@ import (
 	"aresumei/dao"
 	agentcompany "aresumei/internal/agent/company"
 	agentresume "aresumei/internal/agent/resume"
+	"aresumei/internal/schema"
 	"aresumei/model"
 	"aresumei/pkg/e"
 	"aresumei/pkg/util"
 	"aresumei/serizlizer"
 	"context"
+	"encoding/json"
 	"mime/multipart"
 )
 
@@ -241,12 +243,22 @@ func generateResumeReport(resumeId uint, filePath string, name string) {
 		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
 		return
 	}
-	report, err := agentresume.Execute(ctx, pdfstring)
+	report, err := agentresume.ExecuteWithParsedResumeHook(ctx, pdfstring, func(parsedResume schema.Resume) error {
+		content, err := json.Marshal(parsedResume)
+		if err != nil {
+			return err
+		}
+		parsedResumeFilePath, err := util.SaveText(resumesPath, string(content), name)
+		if err != nil {
+			return err
+		}
+		return resumeDao.UpdateParsedResumeFilePath(resumeId, parsedResumeFilePath)
+	})
 	if err != nil {
 		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
 		return
 	}
-	llmFilePath, err := util.SaveText(companyPath, report, name)
+	llmFilePath, err := util.SaveText(resumesPath, report, name)
 	if err != nil {
 		_ = resumeDao.MarkReportFailed(resumeId, err.Error())
 		return

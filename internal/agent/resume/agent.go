@@ -40,6 +40,10 @@ type interviewProjectExperience struct {
 }
 
 func Execute(ctx context.Context, pdf string) (string, error) {
+	return ExecuteWithParsedResumeHook(ctx, pdf, nil)
+}
+
+func ExecuteWithParsedResumeHook(ctx context.Context, pdf string, afterParse func(schema.Resume) error) (string, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		apiKey = os.Getenv("DASHSCOPE_API_KEY")
@@ -58,6 +62,11 @@ func Execute(ctx context.Context, pdf string) (string, error) {
 	parsedResume, err := parseResume(ctx, ai, pdf)
 	if err != nil {
 		return "", err
+	}
+	if afterParse != nil {
+		if err := afterParse(parsedResume); err != nil {
+			return "", err
+		}
 	}
 	return generateInterviewReport(ctx, ai, parsedResume)
 }
@@ -201,7 +210,7 @@ var (
 	markdownBoldItalicRE  = regexp.MustCompile(`[*_]{1,3}([^*_]+)[*_]{1,3}`)
 	markdownInlineCodeRE  = regexp.MustCompile("`([^`]+)`")
 	markdownFenceMarkerRE = regexp.MustCompile("(?m)^```[\\w-]*\\s*$")
-	blankLinesRE         = regexp.MustCompile(`\n{3,}`)
+	blankLinesRE          = regexp.MustCompile(`\n{3,}`)
 )
 
 func cleanInterviewReport(report string) string {
