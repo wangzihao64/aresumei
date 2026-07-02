@@ -2,6 +2,7 @@ package service
 
 import (
 	"aresumei/dao"
+	agentoptimize "aresumei/internal/agent/resume"
 	"aresumei/pkg/e"
 	"aresumei/pkg/util"
 	"aresumei/serizlizer"
@@ -49,6 +50,52 @@ func (r *ResumeService) Resume(ctx context.Context, id uint) serizlizer.Response
 	}
 }
 
-//func (o *OptimizeResume)Optimize(ctx context.Context, id uint) serizlizer.Response {
-//
-//}
+func (o *OptimizeResume) Optimize(ctx context.Context, id uint) serizlizer.Response {
+	code := e.Success
+	if o.ResumeId == 0 {
+		code = e.ErrorNotExistResume
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  "resume_id 不能为空",
+		}
+	}
+	if o.CompanyId == 0 {
+		code = e.ErrorNotExistCompany
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  "company_id 不能为空",
+		}
+	}
+	resumeDao := dao.NewResumeDao(ctx)
+	resume_, err := resumeDao.GetResumeByIdAndUserId(o.ResumeId, id)
+	if err != nil {
+		code = e.ErrorNotExistResume
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  err.Error(),
+		}
+	}
+	companyDao := dao.NewCompanyDao(ctx)
+	company_, err := companyDao.GetCompanyInfoByIdAndUserId(o.CompanyId, id)
+	if err != nil {
+		code = e.ErrorNotExistCompany
+		return serizlizer.Response{
+			Status: code,
+			Msg:    e.GetMsg(code),
+			Error:  "company_id 不能为空",
+		}
+	}
+	companyText, _ := util.ReadText(company_.LLMFilePath)
+	resumeText, _ := util.ReadText(resume_.ParsedResumeFilePath)
+	optimizeText, _ := agentoptimize.OptimizeResumeJSON(ctx, resumeText, companyText)
+	return serizlizer.Response{
+		Status: code,
+		Msg:    e.GetMsg(code),
+		Data: map[string]interface{}{
+			"optimize_text": optimizeText,
+		},
+	}
+}

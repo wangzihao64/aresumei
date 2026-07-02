@@ -77,5 +77,17 @@ func UserUpLoadCompany(c *gin.Context) {
 		resp := uploadCompany.UploadCompany(c.Request.Context(), claims.ID)
 		c.JSON(http.StatusOK, resp)
 	}
-
+}
+func ResumeOptimize(c *gin.Context) {
+	var optimizeService service.OptimizeResume
+	claims, err := util.ParseToken(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	}
+	if err := c.ShouldBind(&optimizeService); err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	} else {
+		resp := optimizeService.Optimize(c.Request.Context(), claims.ID)
+		c.JSON(http.StatusOK, resp)
+	}
 }

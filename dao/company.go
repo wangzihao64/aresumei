@@ -45,7 +45,6 @@ func (u *CompanyDao) UpdateCompanyLLMFilePath(companyId uint, filePath string) e
 func (u *CompanyDao) MarkCompanyReportProcessing(companyId uint) error {
 	return u.Model(&model.CompanyInfo{}).Where("id = ?", companyId).Updates(map[string]interface{}{
 		"status":        model.CompanyStatusProcessing,
-		"report":        "",
 		"error_message": "",
 	}).Error
 }
@@ -53,7 +52,6 @@ func (u *CompanyDao) MarkCompanyReportProcessing(companyId uint) error {
 func (u *CompanyDao) MarkCompanyReportCompleted(companyId uint, report string) error {
 	return u.Model(&model.CompanyInfo{}).Where("id = ?", companyId).Updates(map[string]interface{}{
 		"status":        model.CompanyStatusCompleted,
-		"report":        report,
 		"error_message": "",
 	}).Error
 }
